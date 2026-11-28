@@ -1547,6 +1547,10 @@
       .agy-shell.agy-revealing::before {
         opacity: 0 !important;
       }
+      .agy-shell [data-main-content-header] {
+        background: transparent !important;
+        backdrop-filter: none !important;
+      }
       .agy-shell [class*="@container/titlebar"] {
         background: transparent !important;
         backdrop-filter: none !important;
@@ -1868,6 +1872,12 @@
     window.__AGY_HOLE_EL__ = null;
     window.__AGY_SIDE_EL__ = null;
     window.__AGY_SIDE_WRAP_EL__ = null;
+    window.__AGY_SIDEBAR_EL__ = null;
+    window.__AGY_TITLEBAR_EL__ = null;
+    window.__AGY_TOPBAR_EL__ = null;
+    window.__AGY_LAST_SIDEBAR_EL__ = null;
+    window.__AGY_LAST_TITLEBAR_EL__ = null;
+    window.__AGY_LAST_TOPBAR_EL__ = null;
     window.__AGY_LAST_SIDE_OPEN__ = null;
     window.__AGY_USE_BAKED_GLASS__ = false;
     if (window.__AGY_SCROLL_AC__) {
@@ -2046,10 +2056,35 @@
     if (!shell) return;
     const split = shell.querySelector('[data-testid="sidebar-split"]');
     const sidebarPane = split ? split.firstElementChild : null;
-    const titleBar = shell.querySelector('[class*="@container/titlebar"]');
+    const titleBar = shell.querySelector('[class*="@container/titlebar"], [data-main-content-header]');
+    const topBar = shell.querySelector(':scope > div:first-of-type');
+    if (window.__AGY_SHELL_RO__) {
+      if (sidebarPane && window.__AGY_SIDEBAR_EL__ !== sidebarPane) {
+        try { window.__AGY_SHELL_RO__.observe(sidebarPane); } catch (e) {}
+        window.__AGY_SIDEBAR_EL__ = sidebarPane;
+      }
+      if (titleBar && window.__AGY_TITLEBAR_EL__ !== titleBar) {
+        try { window.__AGY_SHELL_RO__.observe(titleBar); } catch (e) {}
+        window.__AGY_TITLEBAR_EL__ = titleBar;
+      }
+      if (topBar && window.__AGY_TOPBAR_EL__ !== topBar) {
+        try { window.__AGY_SHELL_RO__.observe(topBar); } catch (e) {}
+        window.__AGY_TOPBAR_EL__ = topBar;
+      }
+    }
     const sw = sidebarPane ? Math.round(sidebarPane.getBoundingClientRect().width) : 0;
     const shellRect = shell.getBoundingClientRect();
-    const hdrBottom = titleBar ? Math.round(titleBar.getBoundingClientRect().bottom - shellRect.top) : 35;
+    let hdrBottom = 35;
+    const hdrEl = titleBar || topBar;
+    if (hdrEl) {
+      const hRect = hdrEl.getBoundingClientRect();
+      if (hRect.height > 0) {
+        hdrBottom = Math.max(0, Math.round(hRect.bottom - shellRect.top));
+      } else if (topBar) {
+        const tRect = topBar.getBoundingClientRect();
+        if (tRect.height > 0) hdrBottom = Math.max(0, Math.round(tRect.bottom - shellRect.top));
+      }
+    }
 
     const ms = window.__AGY_METRICS_STATE__ || (window.__AGY_METRICS_STATE__ = {
       glassBg: '',
@@ -2152,18 +2187,40 @@
       window.__AGY_HOLE_EL__ = null;
       window.__AGY_SIDE_EL__ = null;
       window.__AGY_SIDE_WRAP_EL__ = null;
+      window.__AGY_SIDEBAR_EL__ = null;
+      window.__AGY_TITLEBAR_EL__ = null;
+      window.__AGY_TOPBAR_EL__ = null;
     }
     window.__AGY_METRICS_SHELL__ = shell;
+    const sidebarPane = shell.querySelector('[data-testid="sidebar-split"]')?.firstElementChild || null;
+    const titleBar = shell.querySelector('[class*="@container/titlebar"], [data-main-content-header]');
+    const topBar = shell.querySelector(':scope > div:first-of-type');
     if (!window.__AGY_SHELL_RO__ && typeof ResizeObserver !== 'undefined') {
       const ro = new ResizeObserver(syncShellMetrics);
       ro.observe(shell);
-      const sidebarPane = shell.querySelector('[data-testid="sidebar-split"]')?.firstElementChild;
-      if (sidebarPane) ro.observe(sidebarPane);
+      if (sidebarPane) {
+        ro.observe(sidebarPane);
+        window.__AGY_SIDEBAR_EL__ = sidebarPane;
+      }
+      if (titleBar) {
+        ro.observe(titleBar);
+        window.__AGY_TITLEBAR_EL__ = titleBar;
+      }
+      if (topBar) {
+        ro.observe(topBar);
+        window.__AGY_TOPBAR_EL__ = topBar;
+      }
       window.__AGY_SHELL_RO__ = ro;
     }
     const holeAttr = document.body ? (document.body.getAttribute('data-has-browser-hole') || '') : '';
     const holeAttrChanged = window.__AGY_LAST_HOLE_ATTR__ !== holeAttr;
     window.__AGY_LAST_HOLE_ATTR__ = holeAttr;
+    const sidebarChanged = window.__AGY_LAST_SIDEBAR_EL__ !== sidebarPane;
+    const titleBarChanged = window.__AGY_LAST_TITLEBAR_EL__ !== titleBar;
+    const topBarChanged = window.__AGY_LAST_TOPBAR_EL__ !== topBar;
+    window.__AGY_LAST_SIDEBAR_EL__ = sidebarPane;
+    window.__AGY_LAST_TITLEBAR_EL__ = titleBar;
+    window.__AGY_LAST_TOPBAR_EL__ = topBar;
     const sideBody = shell.querySelector('[data-side-panel-body="true"]');
     const sideHasChild = sideBody ? (sideBody.children.length > 0) : false;
     const sideOpen = isSidePanelVisible(sideBody);
@@ -2171,7 +2228,7 @@
     window.__AGY_LAST_SIDE_EL__ = sideBody;
     window.__AGY_LAST_SIDE_HAS_CHILD__ = sideHasChild;
     window.__AGY_LAST_SIDE_OPEN__ = sideOpen;
-    if (force || shellChanged || holeAttrChanged || sideChanged) {
+    if (force || shellChanged || holeAttrChanged || sideChanged || sidebarChanged || titleBarChanged || topBarChanged) {
       syncShellMetrics();
     }
   }
@@ -2470,6 +2527,12 @@
   window.__AGY_HOLE_EL__ = null;
   window.__AGY_SIDE_EL__ = null;
   window.__AGY_SIDE_WRAP_EL__ = null;
+  window.__AGY_SIDEBAR_EL__ = null;
+  window.__AGY_TITLEBAR_EL__ = null;
+  window.__AGY_TOPBAR_EL__ = null;
+  window.__AGY_LAST_SIDEBAR_EL__ = null;
+  window.__AGY_LAST_TITLEBAR_EL__ = null;
+  window.__AGY_LAST_TOPBAR_EL__ = null;
   window.__AGY_LAST_SIDE_OPEN__ = null;
   window.__AGY_METRICS_SHELL__ = null;
   if (window.__AGY_MODAL_OBSERVER__) {
