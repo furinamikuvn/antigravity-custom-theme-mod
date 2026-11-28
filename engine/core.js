@@ -963,10 +963,15 @@
     if (!forceReplay && (!st.bootIntro || window.__AGY_BOOT_PLAYED__)) {
       return;
     }
-    window.__AGY_BOOT_PLAYED__ = true;
     loadLazyModule('boot')
-      .then((fn) => { if (typeof fn === 'function') fn(window.__AGY_INTERNAL__, forceReplay); })
-      .catch(() => {
+      .then((fn) => {
+        if (typeof fn === 'function') {
+          fn(window.__AGY_INTERNAL__, forceReplay);
+          window.__AGY_BOOT_PLAYED__ = true;
+        }
+      })
+      .catch((err) => {
+        window.__AGY_BOOT_ERR__ = String((err && err.stack) || err || 'unknown');
         window.__AGY_BOOT_FINISHED__ = true;
         scheduleRevealWhenReady(true);
       });

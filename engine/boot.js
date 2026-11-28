@@ -381,7 +381,12 @@ window.__AGY_LAZY_BOOT__ = function(ctx, forceReplay = false) {
     const iconOutlineSvg = document.getElementById('agy-icon-outline-svg');
     const outlinePath = document.getElementById('agy-boot-outline-path');
     const colorFillImg = document.getElementById('agy-boot-color-fill');
-    const outlineTotalLen = Math.ceil(outlinePath.getTotalLength() || 673);
+    let outlineTotalLen = 673;
+    try {
+      outlineTotalLen = Math.ceil((outlinePath && outlinePath.getTotalLength()) || 673);
+    } catch (e) {
+      outlineTotalLen = 673;
+    }
     outlinePath.style.strokeDasharray = `${outlineTotalLen}`;
     outlinePath.style.strokeDashoffset = `${outlineTotalLen}`;
 
@@ -590,13 +595,13 @@ window.__AGY_LAZY_BOOT__ = function(ctx, forceReplay = false) {
       splashSheen.classList.remove('run');
       void splashSheen.offsetWidth;
       splashSheen.classList.add('run');
-    }, 1050));
+    }, 150));
 
     window.__AGY_BOOT_TIMERS__.push(setTimeout(() => {
       overlay.classList.add('hud-mode');
       showStage(1, true);
       triggerScanline();
-    }, 2600));
+    }, 450));
 
     document.getElementById('agy-btn-grant').addEventListener('click', (e) => {
       if (currentStage !== 1) return;
